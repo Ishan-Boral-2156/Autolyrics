@@ -49,9 +49,9 @@ def main():
             print(f"Error: Could not find file {clips[0]}")
             return
     else:
-        clips = list(Path("data/mock_singing/test").glob("*.wav")) + list(Path("data/mock_singing/test").glob("*.mp3"))
+        clips = list(Path("data/raw/nus48e/PMAR/sing").glob("*.wav")) + list(Path("data/raw/nus48e/PMAR/sing").glob("*.mp3"))
         if not clips:
-            print("No clips found in data/mock_singing/test!")
+            print("No clips found in data/raw/nus48e/PMAR/sing!")
             return
 
     pygame.mixer.init()
