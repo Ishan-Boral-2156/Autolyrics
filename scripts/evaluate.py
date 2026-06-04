@@ -41,8 +41,9 @@ def main() -> None:
     from models.whisper_model import load_whisper_model, load_whisper_processor
 
     processor = load_whisper_processor(model_name)
-    model = load_whisper_model(model_name, device=device, use_cache=True,
-                                dtype=resolve_dtype("float16"))
+    model = load_whisper_model(
+        model_name, device=device, use_cache=True, dtype=resolve_dtype("float16")
+    )
 
     if args.checkpoint and Path(args.checkpoint).exists():
         model = load_lora_checkpoint(model, args.checkpoint)
@@ -64,13 +65,19 @@ def main() -> None:
 
     from evaluation.evaluator import Evaluator
 
-    gen_kwargs = model_cfg.get("generation", {
-        "max_new_tokens": 225, "num_beams": 5,
-        "no_repeat_ngram_size": 3, "length_penalty": 1.0,
-    })
+    gen_kwargs = model_cfg.get(
+        "generation",
+        {
+            "max_new_tokens": 225,
+            "num_beams": 5,
+            "no_repeat_ngram_size": 3,
+            "length_penalty": 1.0,
+        },
+    )
 
-    evaluator = Evaluator(model=model, processor=processor, device=device,
-                          generation_kwargs=gen_kwargs)
+    evaluator = Evaluator(
+        model=model, processor=processor, device=device, generation_kwargs=gen_kwargs
+    )
     results = evaluator.evaluate_dataset(test_dataset, output_path=args.output)
 
     agg = results.get("aggregate", {})

@@ -1,29 +1,36 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """AutoLyrics - Complete End-to-End Pipeline.
 
 Runs: data loading → baseline eval → LoRA fine-tune → eval → PDF report.
 Self-contained to avoid import-chain issues in the project modules.
 """
-import io, sys
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-import os, time, json, math, random, re, unicodedata
-from pathlib import Path
+import io
+import sys
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
+import json
+import math
+import os
+import random
+import re
+import time
+import unicodedata
 from datetime import datetime
+from pathlib import Path
 
+import jiwer
 import numpy as np
-import torch
 import soundfile as sf
-from torch.utils.data import Dataset, DataLoader
-
+import torch
+from peft import LoraConfig, TaskType, get_peft_model
+from torch.utils.data import DataLoader, Dataset
 from transformers import (
     WhisperForConditionalGeneration,
     WhisperProcessor,
 )
-from peft import LoraConfig, get_peft_model, TaskType
-import jiwer
 
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
@@ -89,7 +96,7 @@ def create_dataset():
             continue
 
         # Skip nonsense text (not real English words)
-        if not re.search(r'[aeiou]', text):
+        if not re.search(r"[aeiou]", text):
             removed["nonsense"] += 1
             continue
 
@@ -108,8 +115,8 @@ def create_dataset():
 
     splits = {
         "train": clean[:n_train],
-        "val": clean[n_train:n_train+n_val],
-        "test": clean[n_train+n_val:]
+        "val": clean[n_train : n_train + n_val],
+        "test": clean[n_train + n_val :],
     }
 
     for name, clips in splits.items():
@@ -123,7 +130,8 @@ class SingDS(Dataset):
     def __init__(self, clips, proc):
         self.clips, self.proc = clips, proc
 
-    def __len__(self): return len(self.clips)
+    def __len__(self):
+        return len(self.clips)
 
     def __getitem__(self, i):
         c = self.clips[i]
@@ -139,16 +147,24 @@ class SingDS(Dataset):
             # Cap to 30s
             max_frames = int(MAX_AUDIO_SEC * sr)
             frames = min(frames, max_frames)
-            audio, _ = sf.read(c["audio_path"], start=start_frame, frames=frames,
-                               dtype="float32", always_2d=True)
+            audio, _ = sf.read(
+                c["audio_path"], start=start_frame, frames=frames, dtype="float32", always_2d=True
+            )
         else:
             audio, _ = sf.read(c["audio_path"], dtype="float32", always_2d=True)
 
-        if audio.ndim > 1: audio = audio.mean(1)
+        if audio.ndim > 1:
+            audio = audio.mean(1)
         if sr != SAMPLE_RATE:
             import torchaudio
-            audio = torchaudio.transforms.Resample(sr, SAMPLE_RATE)(
-                torch.from_numpy(audio).unsqueeze(0)).squeeze(0).numpy()
+
+            audio = (
+                torchaudio.transforms.Resample(sr, SAMPLE_RATE)(
+                    torch.from_numpy(audio).unsqueeze(0)
+                )
+                .squeeze(0)
+                .numpy()
+            )
 
         # Normalize peak
         peak = np.abs(audio).max()
@@ -168,13 +184,16 @@ class SingDS(Dataset):
 
 
 class Collator:
-    def __init__(self, proc): self.proc = proc
+    def __init__(self, proc):
+        self.proc = proc
 
     def __call__(self, feats):
         inp = self.proc.feature_extractor.pad(
-            [{"input_features": f["input_features"]} for f in feats], return_tensors="pt")
+            [{"input_features": f["input_features"]} for f in feats], return_tensors="pt"
+        )
         lab = self.proc.tokenizer.pad(
-            [{"input_ids": f["labels"]} for f in feats], return_tensors="pt")
+            [{"input_ids": f["labels"]} for f in feats], return_tensors="pt"
+        )
         labels = lab["input_ids"].masked_fill(lab.attention_mask.ne(1), -100)
         if (labels[:, 0] == self.proc.tokenizer.bos_token_id).all().item():
             labels = labels[:, 1:]
@@ -189,16 +208,22 @@ def norm(t):
     t = re.sub(r"[^\w\s']", " ", t)
     return re.sub(r"\s+", " ", t).strip()
 
+
 def wer_cer(preds, refs):
-    p = [norm(x) for x in preds]; r = [norm(x) for x in refs]
+    p = [norm(x) for x in preds]
+    r = [norm(x) for x in refs]
     pairs = [(a, b) for a, b in zip(p, r) if b]
-    if not pairs: return {"wer": 1.0, "cer": 1.0}
+    if not pairs:
+        return {"wer": 1.0, "cer": 1.0}
     pp, rr = zip(*pairs)
-    return {"wer": float(jiwer.wer(list(rr), list(pp))),
-            "cer": float(jiwer.cer(list(rr), list(pp)))}
+    return {
+        "wer": float(jiwer.wer(list(rr), list(pp))),
+        "cer": float(jiwer.cer(list(rr), list(pp))),
+    }
+
 
 def evaluate(model, proc, ds, device, label=""):
-    print(f"\n{'─'*50}\nEvaluating: {label}\n{'─'*50}")
+    print(f"\n{'─' * 50}\nEvaluating: {label}\n{'─' * 50}")
     model.eval()
     preds, refs, lats = [], [], []
     for i in range(len(ds)):
@@ -207,19 +232,22 @@ def evaluate(model, proc, ds, device, label=""):
         t0 = time.perf_counter()
         with torch.no_grad():
             ids = model.generate(
-                input_features=inp,
-                max_new_tokens=225,
-                language="en",
-                task="transcribe"
+                input_features=inp, max_new_tokens=225, language="en", task="transcribe"
             )
         lats.append(time.perf_counter() - t0)
         dec = proc.tokenizer.batch_decode(ids, skip_special_tokens=True)
-        preds.append(dec[0].strip()); refs.append(s["text"])
+        preds.append(dec[0].strip())
+        refs.append(s["text"])
     m = wer_cer(preds, refs)
     avg_lat = sum(lats) / len(lats) if lats else 0
-    print(f"  WER: {m['wer']*100:.2f}%  CER: {m['cer']*100:.2f}%  Latency: {avg_lat:.3f}s")
-    return {**m, "avg_latency": avg_lat, "predictions": preds,
-            "references": refs, "latencies": lats}
+    print(f"  WER: {m['wer'] * 100:.2f}%  CER: {m['cer'] * 100:.2f}%  Latency: {avg_lat:.3f}s")
+    return {
+        **m,
+        "avg_latency": avg_lat,
+        "predictions": preds,
+        "references": refs,
+        "latencies": lats,
+    }
 
 
 # ── VRAM info ────────────────────────────────────────────────
@@ -227,8 +255,11 @@ def vram_info():
     if torch.cuda.is_available():
         a = torch.cuda.memory_allocated() / 1e9
         t = torch.cuda.get_device_properties(0).total_memory / 1e9
-        return {"allocated_gb": round(a, 2), "total_gb": round(t, 2),
-                "device": torch.cuda.get_device_name(0)}
+        return {
+            "allocated_gb": round(a, 2),
+            "total_gb": round(t, 2),
+            "device": torch.cuda.get_device_name(0),
+        }
     return {"allocated_gb": 0, "total_gb": 0, "device": str(DEVICE)}
 
 
@@ -248,7 +279,8 @@ def main():
     proc.tokenizer.set_prefix_tokens(language="en", task="transcribe")
 
     base_model = WhisperForConditionalGeneration.from_pretrained(
-        MODEL_NAME, torch_dtype=torch.float32)
+        MODEL_NAME, torch_dtype=torch.float32
+    )
     base_model.config.forced_decoder_ids = None
     base_model.config.suppress_tokens = []
     base_model.to(DEVICE)
@@ -264,8 +296,11 @@ def main():
     # 4. LoRA fine-tuning
     print("\n>> PHASE 4: LoRA fine-tuning (decoder)")
     lora_cfg = LoraConfig(
-        r=LORA_R, lora_alpha=LORA_ALPHA, lora_dropout=LORA_DROPOUT,
-        bias="none", target_modules=["q_proj", "v_proj", "k_proj", "out_proj", "fc1", "fc2"],
+        r=LORA_R,
+        lora_alpha=LORA_ALPHA,
+        lora_dropout=LORA_DROPOUT,
+        bias="none",
+        target_modules=["q_proj", "v_proj", "k_proj", "out_proj", "fc1", "fc2"],
         task_type=TaskType.SEQ_2_SEQ_LM,
     )
     base_model.config.use_cache = False
@@ -276,11 +311,13 @@ def main():
     run_dir.mkdir(parents=True, exist_ok=True)
 
     collator = Collator(proc)
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              collate_fn=collator, num_workers=0)
+    train_loader = DataLoader(
+        train_ds, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collator, num_workers=0
+    )
 
     optimizer = torch.optim.AdamW(
-        [p for p in model.parameters() if p.requires_grad], lr=LEARNING_RATE)
+        [p for p in model.parameters() if p.requires_grad], lr=LEARNING_RATE
+    )
 
     # Learning rate scheduler: linear warmup then cosine decay
     total_steps = min(MAX_STEPS, len(train_loader) * TRAIN_EPOCHS)
@@ -329,7 +366,7 @@ def main():
             if global_step >= MAX_STEPS:
                 break
         avg = epoch_loss / max(1, n_batches)
-        print(f"  Epoch {epoch+1}/{TRAIN_EPOCHS} | avg loss: {avg:.4f}")
+        print(f"  Epoch {epoch + 1}/{TRAIN_EPOCHS} | avg loss: {avg:.4f}")
 
         if global_step >= MAX_STEPS:
             break
@@ -383,6 +420,7 @@ def main():
     print(f"  Relative Delta:  {rel:+.1f}%")
     print(f"  Model checkpoint: {best_dir}")
     print(f"  Results JSON:     {results_path}")
+
 
 if __name__ == "__main__":
     main()

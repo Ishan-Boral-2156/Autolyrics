@@ -46,7 +46,10 @@ def download_file(url: str, dest: Path, chunk_size: int = 8192) -> Path:
     resp = requests.get(url, stream=True, timeout=120)
     resp.raise_for_status()
     total = int(resp.headers.get("content-length", 0))
-    with open(dest, "wb") as f, tqdm(total=total, unit="B", unit_scale=True, desc=dest.name) as pbar:
+    with (
+        open(dest, "wb") as f,
+        tqdm(total=total, unit="B", unit_scale=True, desc=dest.name) as pbar,
+    ):
         for chunk in resp.iter_content(chunk_size=chunk_size):
             f.write(chunk)
             pbar.update(len(chunk))
@@ -103,6 +106,7 @@ def download_all(output_dir: str | Path = "./data/raw") -> None:
 def download_hf_dataset(dataset_id: str, cache_dir: str = "./.cache/autolyrics/hf") -> None:
     """Pre-download a HuggingFace dataset."""
     from datasets import load_dataset
+
     logger.info("Downloading HF dataset: %s", dataset_id)
     load_dataset(dataset_id, cache_dir=cache_dir, trust_remote_code=True)
     logger.info("HF dataset %s cached at %s", dataset_id, cache_dir)

@@ -12,6 +12,7 @@ from torch.utils.data import Dataset
 @dataclass
 class SingingClip:
     """Unified record for a singing audio segment across all dataset sources."""
+
     audio_path: str
     text: str
     start: float = 0.0

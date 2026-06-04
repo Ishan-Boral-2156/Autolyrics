@@ -20,7 +20,7 @@ lyrics = {
     "17": "goodbye to you my trusted friend we've known each other since we were nine or ten together we've climbed hills and trees learned of love and abc's skinned our hearts and skinned our knees goodbye my friend it's hard to die when all the birds are singing in the sky",
     "18": "i'm just a little bit caught in the middle life is a maze and love is a riddle i don't know where to go i can't do it alone i've tried and i don't know why slow it down make it stop or else my heart is going to pop 'cause it's too much yeah it's a lot to be something i'm not",
     "19": "some say love it is a river that drowns the tender reed some say love it is a razor that leaves your soul to bleed some say love it is a hunger an endless aching need i say love it is a flower and you its only seed",
-    "20": "oceans apart day after day and i slowly go insane i hear your voice on the line but it doesn't stop the pain if i see you next to never how can we say forever wherever you go whatever you do i will be right here waiting for you whatever it takes or how my heart breaks i will be right here waiting for you"
+    "20": "oceans apart day after day and i slowly go insane i hear your voice on the line but it doesn't stop the pain if i see you next to never how can we say forever wherever you go whatever you do i will be right here waiting for you whatever it takes or how my heart breaks i will be right here waiting for you",
 }
 
 with open("data/raw/nus48e/lyrics.json", "w") as f:

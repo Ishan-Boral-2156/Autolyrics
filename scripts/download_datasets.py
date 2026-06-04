@@ -15,11 +15,15 @@ logger = get_logger(__name__)
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download AutoLyrics datasets")
     parser.add_argument(
-        "--dataset", type=str, default="all",
+        "--dataset",
+        type=str,
+        default="all",
         help="Dataset to download: nus48e | dali | jamendo | hf | all",
     )
     parser.add_argument("--output", type=str, default="./data/raw", help="Output directory")
-    parser.add_argument("--hf-dataset-id", type=str, default=None, help="HF dataset ID (for --dataset hf)")
+    parser.add_argument(
+        "--hf-dataset-id", type=str, default=None, help="HF dataset ID (for --dataset hf)"
+    )
     args = parser.parse_args()
 
     if args.dataset == "all":

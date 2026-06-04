@@ -39,6 +39,7 @@ class SingingAugmentor:
     def _pitch_shift(self, audio: np.ndarray, sr: int) -> np.ndarray:
         try:
             import librosa
+
             semitones = random.uniform(*self.pitch_shift_semitones)
             return librosa.effects.pitch_shift(audio, sr=sr, n_steps=semitones)
         except ImportError:
@@ -47,6 +48,7 @@ class SingingAugmentor:
     def _time_stretch(self, audio: np.ndarray, sr: int) -> np.ndarray:
         try:
             import librosa
+
             factor = random.uniform(*self.time_stretch_factor)
             stretched = librosa.effects.time_stretch(audio, rate=factor)
             return stretched
@@ -55,7 +57,7 @@ class SingingAugmentor:
 
     def _add_noise(self, audio: np.ndarray, sr: int) -> np.ndarray:
         snr_db = random.uniform(*self.add_noise_snr_db)
-        rms_signal = np.sqrt(np.mean(audio ** 2))
+        rms_signal = np.sqrt(np.mean(audio**2))
         if rms_signal == 0:
             return audio
         rms_noise = rms_signal / (10 ** (snr_db / 20.0))
@@ -89,12 +91,12 @@ class SpecAugment:
         for _ in range(self.n_freq_masks):
             f = random.randint(0, min(self.freq_mask_param, n_freq - 1))
             f0 = random.randint(0, n_freq - f)
-            spec[f0:f0 + f, :] = 0.0
+            spec[f0 : f0 + f, :] = 0.0
 
         for _ in range(self.n_time_masks):
             t = random.randint(0, min(self.time_mask_param, n_time - 1))
             t0 = random.randint(0, n_time - t)
-            spec[:, t0:t0 + t] = 0.0
+            spec[:, t0 : t0 + t] = 0.0
 
         return spec
 

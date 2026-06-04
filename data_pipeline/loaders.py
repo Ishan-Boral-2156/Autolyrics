@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 #  Base loader
 # ---------------------------------------------------------------------------
 
+
 class BaseLoader:
     """Base class for all dataset loaders."""
 
@@ -36,6 +37,7 @@ class BaseLoader:
 
     def _split(self, clips: list[SingingClip]) -> dict[str, list[SingingClip]]:
         import random
+
         splits_cfg = self.cfg.get("splits", {})
         train_r = splits_cfg.get("train_ratio", 0.8)
         val_r = splits_cfg.get("val_ratio", 0.1)
@@ -44,8 +46,8 @@ class BaseLoader:
         n_train = int(n * train_r)
         n_val = int(n * val_r)
         train = clips[:n_train]
-        val = clips[n_train:n_train + n_val]
-        test = clips[n_train + n_val:]
+        val = clips[n_train : n_train + n_val]
+        test = clips[n_train + n_val :]
         for c in train:
             c.split = "train"
         for c in val:
@@ -58,6 +60,7 @@ class BaseLoader:
 # ---------------------------------------------------------------------------
 #  NUS-48E Loader
 # ---------------------------------------------------------------------------
+
 
 class NUS48ELoader(BaseLoader):
     """Loader for the NUS Sung and Spoken Lyrics Corpus (NUS-48E)."""
@@ -88,12 +91,14 @@ class NUS48ELoader(BaseLoader):
                     text = ""
                     if lyric_file.exists():
                         text = lyric_file.read_text(encoding="utf-8").strip()
-                    clips.append(SingingClip(
-                        audio_path=str(wav_file),
-                        text=text,
-                        dataset_name=self.name,
-                        metadata={"singer": singer, "mode": mode},
-                    ))
+                    clips.append(
+                        SingingClip(
+                            audio_path=str(wav_file),
+                            text=text,
+                            dataset_name=self.name,
+                            metadata={"singer": singer, "mode": mode},
+                        )
+                    )
         logger.info("NUS-48E: loaded %d clips", len(clips))
         return clips
 
@@ -115,14 +120,19 @@ class NUS48ELoader(BaseLoader):
             elif singer in train_singers or not train_singers:
                 clip.split = "train"
                 result["train"].append(clip)
-        logger.info("NUS-48E splits: train=%d, val=%d, test=%d",
-                     len(result["train"]), len(result["val"]), len(result["test"]))
+        logger.info(
+            "NUS-48E splits: train=%d, val=%d, test=%d",
+            len(result["train"]),
+            len(result["val"]),
+            len(result["test"]),
+        )
         return result
 
 
 # ---------------------------------------------------------------------------
 #  DALI Loader
 # ---------------------------------------------------------------------------
+
 
 class DALILoader(BaseLoader):
     """Loader for the DALI dataset (aligned lyrics for polyphonic songs)."""
@@ -173,10 +183,16 @@ class DALILoader(BaseLoader):
                 dur = end - start
                 if not text or dur < min_dur or dur > max_dur or score < min_score:
                     continue
-                clips.append(SingingClip(
-                    audio_path=audio_path, text=text, start=start, end=end,
-                    dataset_name=self.name, metadata={"song_id": song_id, "score": score},
-                ))
+                clips.append(
+                    SingingClip(
+                        audio_path=audio_path,
+                        text=text,
+                        start=start,
+                        end=end,
+                        dataset_name=self.name,
+                        metadata={"song_id": song_id, "score": score},
+                    )
+                )
         logger.info("DALI: loaded %d clips", len(clips))
         return clips
 
@@ -184,6 +200,7 @@ class DALILoader(BaseLoader):
 # ---------------------------------------------------------------------------
 #  Jamendo Loader
 # ---------------------------------------------------------------------------
+
 
 class JamendoLoader(BaseLoader):
     """Loader for the Jamendo Lyrics dataset."""
@@ -236,10 +253,15 @@ class JamendoLoader(BaseLoader):
                     continue
                 if dur > 0 and (dur < min_dur or dur > max_dur):
                     continue
-                clips.append(SingingClip(
-                    audio_path=audio_path, text=text, start=start, end=end,
-                    dataset_name=self.name,
-                ))
+                clips.append(
+                    SingingClip(
+                        audio_path=audio_path,
+                        text=text,
+                        start=start,
+                        end=end,
+                        dataset_name=self.name,
+                    )
+                )
         logger.info("Jamendo: loaded %d clips", len(clips))
         return clips
 
@@ -247,6 +269,7 @@ class JamendoLoader(BaseLoader):
 # ---------------------------------------------------------------------------
 #  HuggingFace Hub Loader
 # ---------------------------------------------------------------------------
+
 
 class HFLoader(BaseLoader):
     """Loader for any singing/lyrics dataset on the HuggingFace Hub."""
@@ -284,13 +307,15 @@ class HFLoader(BaseLoader):
                 if not text:
                     continue
                 audio_path = audio.get("path", "") if isinstance(audio, dict) else ""
-                clips.append(SingingClip(
-                    audio_path=audio_path,
-                    text=text,
-                    dataset_name=self.name,
-                    split=split_name.replace("validation", "val"),
-                    metadata={"hf_dataset": dataset_id},
-                ))
+                clips.append(
+                    SingingClip(
+                        audio_path=audio_path,
+                        text=text,
+                        dataset_name=self.name,
+                        split=split_name.replace("validation", "val"),
+                        metadata={"hf_dataset": dataset_id},
+                    )
+                )
         logger.info("HF: loaded %d clips from %s", len(clips), dataset_id)
         return clips
 

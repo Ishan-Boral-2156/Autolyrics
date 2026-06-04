@@ -73,7 +73,12 @@ class LatencyBenchmark:
                 "vram_total_gb": vram.get("total_gb", 0),
             }
             results["batch_results"].append(entry)
-            logger.info("BS=%d | Latency=%.3fs | RTF=%.3f | VRAM=%.2fGB",
-                        bs, avg_lat, rtf, vram.get("allocated_gb", 0))
+            logger.info(
+                "BS=%d | Latency=%.3fs | RTF=%.3f | VRAM=%.2fGB",
+                bs,
+                avg_lat,
+                rtf,
+                vram.get("allocated_gb", 0),
+            )
 
         return results

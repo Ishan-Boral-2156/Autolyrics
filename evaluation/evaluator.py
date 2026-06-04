@@ -64,15 +64,11 @@ class Evaluator:
             input_features = input_features.to(self.device)
 
             start = time.perf_counter()
-            predicted_ids = self.model.generate(
-                input_features, **self.generation_kwargs
-            )
+            predicted_ids = self.model.generate(input_features, **self.generation_kwargs)
             elapsed = time.perf_counter() - start
             latencies.append(elapsed)
 
-            decoded = self.processor.tokenizer.batch_decode(
-                predicted_ids, skip_special_tokens=True
-            )
+            decoded = self.processor.tokenizer.batch_decode(predicted_ids, skip_special_tokens=True)
             predictions.append(decoded[0].strip())
             references.append(sample.get("text", ""))
 
@@ -91,6 +87,7 @@ class Evaluator:
             write_json(results, output_path)
             logger.info("Results saved to %s", output_path)
 
-        logger.info("WER: %.2f%% | CER: %.2f%% | Avg latency: %.3fs",
-                     agg["wer"], agg["cer"], avg_latency)
+        logger.info(
+            "WER: %.2f%% | CER: %.2f%% | Avg latency: %.3fs", agg["wer"], agg["cer"], avg_latency
+        )
         return results

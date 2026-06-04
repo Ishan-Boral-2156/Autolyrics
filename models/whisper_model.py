@@ -23,12 +23,8 @@ def load_whisper_processor(
 ) -> WhisperProcessor:
     """Load and configure a WhisperProcessor (feature extractor + tokenizer)."""
     feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
-    tokenizer = WhisperTokenizer.from_pretrained(
-        model_name, language=language, task=task
-    )
-    processor = WhisperProcessor(
-        feature_extractor=feature_extractor, tokenizer=tokenizer
-    )
+    tokenizer = WhisperTokenizer.from_pretrained(model_name, language=language, task=task)
+    processor = WhisperProcessor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     return processor
 
 
@@ -69,16 +65,12 @@ def load_whisper_model(
     logger.info("Loading Whisper model: %s (attn=%s)", model_name, attn_implementation)
 
     try:
-        model = WhisperForConditionalGeneration.from_pretrained(
-            model_name, **load_kwargs
-        )
+        model = WhisperForConditionalGeneration.from_pretrained(model_name, **load_kwargs)
     except Exception:
         # Fall back without SDPA if the model doesn't support it
         load_kwargs.pop("attn_implementation", None)
         logger.warning("SDPA not supported, falling back to default attention.")
-        model = WhisperForConditionalGeneration.from_pretrained(
-            model_name, **load_kwargs
-        )
+        model = WhisperForConditionalGeneration.from_pretrained(model_name, **load_kwargs)
 
     model.config.use_cache = use_cache
     model.config.forced_decoder_ids = None
@@ -91,7 +83,9 @@ def load_whisper_model(
     total = sum(p.numel() for p in model.parameters())
     logger.info(
         "Model loaded: %s | Total params: %.1fM | Trainable: %.1fM",
-        model_name, total / 1e6, trainable / 1e6,
+        model_name,
+        total / 1e6,
+        trainable / 1e6,
     )
     return model
 

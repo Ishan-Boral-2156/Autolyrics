@@ -68,6 +68,7 @@ def ensure_dir(path: str | Path) -> Path:
     p.mkdir(parents=True, exist_ok=True)
     return p
 
+
 def save_run_state(output_dir: str | Path, config: dict[str, Any], seed: int) -> None:
     data = {"config": config, "seed": seed}
     write_json(Path(output_dir) / "run_state.json", data)

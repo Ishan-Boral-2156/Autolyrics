@@ -40,8 +40,9 @@ def main() -> None:
     from models.whisper_model import load_whisper_model, load_whisper_processor
 
     processor = load_whisper_processor(model_name)
-    model = load_whisper_model(model_name, device=device, use_cache=True,
-                                dtype=resolve_dtype("float16"))
+    model = load_whisper_model(
+        model_name, device=device, use_cache=True, dtype=resolve_dtype("float16")
+    )
 
     if args.checkpoint and Path(args.checkpoint).exists():
         model = load_lora_checkpoint(model, args.checkpoint)

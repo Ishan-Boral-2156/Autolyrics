@@ -46,7 +46,11 @@ def build_quantization_config(
             bnb_4bit_quant_type=bnb_4bit_quant_type,
             bnb_4bit_use_double_quant=bnb_4bit_use_double_quant,
         )
-        logger.info("4-bit quantization enabled (type=%s, double_quant=%s)", bnb_4bit_quant_type, bnb_4bit_use_double_quant)
+        logger.info(
+            "4-bit quantization enabled (type=%s, double_quant=%s)",
+            bnb_4bit_quant_type,
+            bnb_4bit_use_double_quant,
+        )
     elif bits == 8:
         config = BitsAndBytesConfig(load_in_8bit=True)
         logger.info("8-bit quantization enabled.")

@@ -1,19 +1,19 @@
 """AutoLyrics — Seq2SeqTrainer wrapper."""
+
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Any
+
 from core.logging import get_logger
 from evaluation.metrics import compute_wer_cer
-from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments, WhisperProcessor
+from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments
 
 logger = get_logger(__name__)
 
-WHISPER_KEYS = {"input_features", "labels",
-                "decoder_input_ids", "attention_mask"}
+WHISPER_KEYS = {"input_features", "labels", "decoder_input_ids", "attention_mask"}
 
 
-WHISPER_KEYS = {"input_features", "labels",
-                "decoder_input_ids", "attention_mask"}
+WHISPER_KEYS = {"input_features", "labels", "decoder_input_ids", "attention_mask"}
 
 
 class WhisperSeq2SeqTrainer(Seq2SeqTrainer):
@@ -29,7 +29,16 @@ class WhisperSeq2SeqTrainer(Seq2SeqTrainer):
 
 
 class AutoLyricsTrainer:
-    def __init__(self, model, processor, train_dataset, eval_dataset, data_collator, training_cfg, callbacks=None):
+    def __init__(
+        self,
+        model,
+        processor,
+        train_dataset,
+        eval_dataset,
+        data_collator,
+        training_cfg,
+        callbacks=None,
+    ):
         self.model = model
         self.processor = processor
         self.train_dataset = train_dataset
@@ -44,12 +53,9 @@ class AutoLyricsTrainer:
         return Seq2SeqTrainingArguments(
             output_dir=cfg.get("output_dir", "./runs/default"),
             num_train_epochs=cfg.get("num_train_epochs", 10),
-            per_device_train_batch_size=cfg.get(
-                "per_device_train_batch_size", 8),
-            per_device_eval_batch_size=cfg.get(
-                "per_device_eval_batch_size", 8),
-            gradient_accumulation_steps=cfg.get(
-                "gradient_accumulation_steps", 2),
+            per_device_train_batch_size=cfg.get("per_device_train_batch_size", 8),
+            per_device_eval_batch_size=cfg.get("per_device_eval_batch_size", 8),
+            gradient_accumulation_steps=cfg.get("gradient_accumulation_steps", 2),
             learning_rate=cfg.get("learning_rate", 1e-4),
             warmup_ratio=cfg.get("warmup_ratio", 0.05),
             lr_scheduler_type=cfg.get("lr_scheduler_type", "cosine"),
@@ -78,10 +84,8 @@ class AutoLyricsTrainer:
         pred_ids = pred.predictions
         label_ids = pred.label_ids
         label_ids[label_ids == -100] = self.processor.tokenizer.pad_token_id
-        pred_str = self.processor.tokenizer.batch_decode(
-            pred_ids, skip_special_tokens=True)
-        label_str = self.processor.tokenizer.batch_decode(
-            label_ids, skip_special_tokens=True)
+        pred_str = self.processor.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+        label_str = self.processor.tokenizer.batch_decode(label_ids, skip_special_tokens=True)
         wer, cer = compute_wer_cer(predictions=pred_str, references=label_str)
         return {"wer": wer, "cer": cer}
 
@@ -104,8 +108,7 @@ class AutoLyricsTrainer:
             self.build()
         logger.info("Starting training...")
         result = self._trainer.train()
-        output_dir = Path(self.training_cfg.get(
-            "output_dir", "./runs/default"))
+        output_dir = Path(self.training_cfg.get("output_dir", "./runs/default"))
         best_dir = output_dir / "best"
         self._trainer.save_model(str(best_dir))
         self.processor.save_pretrained(str(best_dir))

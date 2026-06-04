@@ -26,7 +26,9 @@ def main() -> None:
     args = parser.parse_args()
 
     # Load merged config
-    cfg = load_config(args.model_config, args.data_config, args.training_config, overrides=args.overrides)
+    cfg = load_config(
+        args.model_config, args.data_config, args.training_config, overrides=args.overrides
+    )
     cfg_dict = config_to_dict(cfg)
 
     # Extract sections
@@ -65,7 +67,9 @@ def main() -> None:
 
     model_name = model_cfg.get("hf_name", "openai/whisper-small")
     processor = load_whisper_processor(
-        model_name, language=model_cfg.get("language", "en"), task=model_cfg.get("task", "transcribe")
+        model_name,
+        language=model_cfg.get("language", "en"),
+        task=model_cfg.get("task", "transcribe"),
     )
 
     # Quantization
@@ -73,7 +77,8 @@ def main() -> None:
 
     # Load model
     model = load_whisper_model(
-        model_name, device=device,
+        model_name,
+        device=device,
         dtype=resolve_dtype(cfg_dict.get("device", {}).get("precision", "bf16")),
         attn_implementation=model_cfg.get("attn_implementation", "sdpa"),
         quantization_config=quant_config,
@@ -98,12 +103,14 @@ def main() -> None:
     augmentor = build_augmentor(aug_cfg)
 
     train_dataset = SingingDataset(
-        clips=splits["train"], processor=processor,
+        clips=splits["train"],
+        processor=processor,
         max_duration_s=cfg_dict.get("audio", {}).get("max_duration_s", 30.0),
         augment_fn=augmentor,
     )
     eval_dataset = SingingDataset(
-        clips=splits["val"], processor=processor,
+        clips=splits["val"],
+        processor=processor,
         max_duration_s=cfg_dict.get("audio", {}).get("max_duration_s", 30.0),
     )
     collator = WhisperDataCollator(processor=processor)
@@ -116,9 +123,12 @@ def main() -> None:
 
     callbacks = build_callbacks(training_cfg)
     trainer = AutoLyricsTrainer(
-        model=model, processor=processor,
-        train_dataset=train_dataset, eval_dataset=eval_dataset,
-        data_collator=collator, training_cfg=training_cfg,
+        model=model,
+        processor=processor,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        data_collator=collator,
+        training_cfg=training_cfg,
         callbacks=callbacks,
     )
 

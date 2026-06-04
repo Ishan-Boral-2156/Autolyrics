@@ -12,6 +12,7 @@ from omegaconf import DictConfig, OmegaConf
 #  Pydantic-style dataclass schemas (used for runtime validation)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AudioConfig:
     sampling_rate: int = 16_000
@@ -31,14 +32,16 @@ class ModelConfig:
     attn_implementation: str = "sdpa"
     use_cache: bool = False
     freeze_feature_encoder: bool = False
-    generation: dict[str, Any] = field(default_factory=lambda: {
-        "max_new_tokens": 225,
-        "num_beams": 5,
-        "no_repeat_ngram_size": 3,
-        "length_penalty": 1.0,
-        "temperature": 0.0,
-        "suppress_blank": True,
-    })
+    generation: dict[str, Any] = field(
+        default_factory=lambda: {
+            "max_new_tokens": 225,
+            "num_beams": 5,
+            "no_repeat_ngram_size": 3,
+            "length_penalty": 1.0,
+            "temperature": 0.0,
+            "suppress_blank": True,
+        }
+    )
 
 
 @dataclass
@@ -56,9 +59,14 @@ class LoRAConfig:
     alpha: int = 32
     dropout: float = 0.05
     bias: str = "none"
-    target_modules: list[str] = field(default_factory=lambda: [
-        "q_proj", "v_proj", "k_proj", "out_proj",
-    ])
+    target_modules: list[str] = field(
+        default_factory=lambda: [
+            "q_proj",
+            "v_proj",
+            "k_proj",
+            "out_proj",
+        ]
+    )
     modules_to_save: list[str] = field(default_factory=list)
     task_type: str = "SEQ_2_SEQ_LM"
     apply_to_encoder: bool = False
@@ -152,6 +160,7 @@ class PostprocessingConfig:
 # ---------------------------------------------------------------------------
 #  Config loading
 # ---------------------------------------------------------------------------
+
 
 def load_config(*yaml_paths: str | Path, overrides: list[str] | None = None) -> DictConfig:
     """Load and merge one or more YAML config files with optional CLI overrides.

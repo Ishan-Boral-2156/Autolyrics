@@ -1,15 +1,15 @@
 from training.callbacks import (
-    VRAMLoggingCallback,
     BestModelLogCallback,
     TrainingProgressCallback,
+    VRAMLoggingCallback,
     build_callbacks,
 )
 from training.trainer import AutoLyricsTrainer
 
 __all__ = [
-    "VRAMLoggingCallback",
+    "AutoLyricsTrainer",
     "BestModelLogCallback",
     "TrainingProgressCallback",
+    "VRAMLoggingCallback",
     "build_callbacks",
-    "AutoLyricsTrainer",
 ]

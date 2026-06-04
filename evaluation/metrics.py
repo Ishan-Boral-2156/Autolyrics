@@ -91,7 +91,9 @@ def _safe_jiwer_imports():
     return jiwer_wer, jiwer_cer
 
 
-def compute_wer(predictions: Sequence[str], references: Sequence[str], normalise: bool = True) -> float:
+def compute_wer(
+    predictions: Sequence[str], references: Sequence[str], normalise: bool = True
+) -> float:
     """Compute corpus-level Word Error Rate."""
     jiwer_wer, _ = _safe_jiwer_imports()
     if normalise:
@@ -105,7 +107,9 @@ def compute_wer(predictions: Sequence[str], references: Sequence[str], normalise
     return float(jiwer_wer(list(ref), list(pred)))
 
 
-def compute_cer(predictions: Sequence[str], references: Sequence[str], normalise: bool = True) -> float:
+def compute_cer(
+    predictions: Sequence[str], references: Sequence[str], normalise: bool = True
+) -> float:
     """Compute corpus-level Character Error Rate."""
     _, jiwer_cer = _safe_jiwer_imports()
     if normalise:
@@ -177,14 +181,18 @@ def compute_per_sample_metrics(
 ) -> list[dict[str, Any]]:
     wer_list = compute_per_clip_wer(predictions, references, normalise)
     cer_list = compute_per_clip_cer(predictions, references, normalise)
-    return [{"wer": w, "cer": c, "pred": p, "ref": r} for w, c, p, r in zip(wer_list, cer_list, predictions, references)]
+    return [
+        {"wer": w, "cer": c, "pred": p, "ref": r}
+        for w, c, p, r in zip(wer_list, cer_list, predictions, references)
+    ]
+
 
 __all__ = [
     "compute_cer",
     "compute_per_clip_cer",
     "compute_per_clip_wer",
+    "compute_per_sample_metrics",
     "compute_wer",
     "compute_wer_cer",
-    "compute_per_sample_metrics",
     "normalize_for_lyrics",
 ]

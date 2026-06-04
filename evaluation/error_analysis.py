@@ -56,26 +56,44 @@ def analyze_errors(
         for chunk in result.alignments:
             for align in chunk:
                 if align.type == "substitute":
-                    r_word = ref_words[align.ref_start_idx] if align.ref_start_idx < len(ref_words) else ""
-                    p_word = pred_words[align.hyp_start_idx] if align.hyp_start_idx < len(pred_words) else ""
+                    r_word = (
+                        ref_words[align.ref_start_idx]
+                        if align.ref_start_idx < len(ref_words)
+                        else ""
+                    )
+                    p_word = (
+                        pred_words[align.hyp_start_idx]
+                        if align.hyp_start_idx < len(pred_words)
+                        else ""
+                    )
                     if r_word and p_word:
                         sub_pairs[(r_word, p_word)] += 1
                 elif align.type == "insert":
-                    p_word = pred_words[align.hyp_start_idx] if align.hyp_start_idx < len(pred_words) else ""
+                    p_word = (
+                        pred_words[align.hyp_start_idx]
+                        if align.hyp_start_idx < len(pred_words)
+                        else ""
+                    )
                     if p_word:
                         insertion_words[p_word] += 1
                 elif align.type == "delete":
-                    r_word = ref_words[align.ref_start_idx] if align.ref_start_idx < len(ref_words) else ""
+                    r_word = (
+                        ref_words[align.ref_start_idx]
+                        if align.ref_start_idx < len(ref_words)
+                        else ""
+                    )
                     if r_word:
                         deletion_words[r_word] += 1
 
-        per_sample.append({
-            "reference": ref,
-            "prediction": pred,
-            "substitutions": subs,
-            "insertions": ins,
-            "deletions": dels,
-        })
+        per_sample.append(
+            {
+                "reference": ref,
+                "prediction": pred,
+                "substitutions": subs,
+                "insertions": ins,
+                "deletions": dels,
+            }
+        )
 
     return {
         "total_substitutions": total_subs,

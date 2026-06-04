@@ -45,6 +45,7 @@ def sample_references() -> list[str]:
 def tmp_audio_file(tmp_path, sample_audio_np) -> str:
     """Write a temporary WAV file and return its path."""
     import soundfile as sf
+
     path = tmp_path / "test_audio.wav"
     sf.write(str(path), sample_audio_np, 16_000)
     return str(path)

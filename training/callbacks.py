@@ -20,7 +20,9 @@ logger = get_logger(__name__)
 class VRAMLoggingCallback(TrainerCallback):
     """Log GPU VRAM usage at each logging step."""
 
-    def on_log(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs: Any) -> None:
+    def on_log(
+        self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs: Any
+    ) -> None:
         vram = get_vram_info()
         if vram:
             logger.info(
@@ -38,7 +40,14 @@ class BestModelLogCallback(TrainerCallback):
     def __init__(self) -> None:
         self._best_metric: float | None = None
 
-    def on_evaluate(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, metrics: dict[str, Any] | None = None, **kwargs: Any) -> None:
+    def on_evaluate(
+        self,
+        args: TrainingArguments,
+        state: TrainerState,
+        control: TrainerControl,
+        metrics: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
         if metrics is None:
             return
         metric_name = args.metric_for_best_model or "wer"
@@ -54,11 +63,15 @@ class BestModelLogCallback(TrainerCallback):
 class TrainingProgressCallback(TrainerCallback):
     """Log high-level training progress at epoch boundaries."""
 
-    def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs: Any) -> None:
+    def on_epoch_end(
+        self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs: Any
+    ) -> None:
         epoch = state.epoch or 0
         logger.info(
             "Epoch %.0f/%d complete | Global step: %d",
-            epoch, args.num_train_epochs, state.global_step,
+            epoch,
+            args.num_train_epochs,
+            state.global_step,
         )
 
 
@@ -78,7 +91,10 @@ def build_callbacks(training_cfg: dict[str, Any]) -> list[TrainerCallback]:
                 early_stopping_threshold=es_cfg.get("threshold", 0.001),
             )
         )
-        logger.info("Early stopping enabled: patience=%d, threshold=%.4f",
-                     es_cfg.get("patience", 4), es_cfg.get("threshold", 0.001))
+        logger.info(
+            "Early stopping enabled: patience=%d, threshold=%.4f",
+            es_cfg.get("patience", 4),
+            es_cfg.get("threshold", 0.001),
+        )
 
     return callbacks

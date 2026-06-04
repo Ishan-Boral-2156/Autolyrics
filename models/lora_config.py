@@ -61,7 +61,12 @@ def build_lora_config(
 
     logger.info(
         "LoRA config: r=%d, alpha=%d, dropout=%.2f, targets=%s, encoder=%s, decoder=%s",
-        r, alpha, dropout, target_modules, apply_to_encoder, apply_to_decoder,
+        r,
+        alpha,
+        dropout,
+        target_modules,
+        apply_to_encoder,
+        apply_to_decoder,
     )
     return config
 

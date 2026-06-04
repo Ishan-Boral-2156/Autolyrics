@@ -1,8 +1,9 @@
-from peft import PeftModel
-from transformers import WhisperProcessor, WhisperForConditionalGeneration, pipeline
 import os
+
 import gradio as gr
 import torch
+from peft import PeftModel
+from transformers import WhisperForConditionalGeneration, WhisperProcessor, pipeline
 
 # Force inject FFmpeg into PATH dynamically to bypass Windows terminal restart issues
 ffmpeg_bin = r"C:\Users\ishan\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin"
@@ -20,13 +21,15 @@ print("Loading Base Whisper model...")
 processor = WhisperProcessor.from_pretrained(MODEL_NAME)
 dtype = torch.float16 if device == "cuda:0" else torch.float32
 
-base_model_pure = WhisperForConditionalGeneration.from_pretrained(
-    MODEL_NAME, torch_dtype=dtype).to(device)
+base_model_pure = WhisperForConditionalGeneration.from_pretrained(MODEL_NAME, torch_dtype=dtype).to(
+    device
+)
 
 print("Loading Fine-Tuned LoRA model...")
 # Load a second instance for the adapter so we don't pollute the base model
 base_model_for_lora = WhisperForConditionalGeneration.from_pretrained(
-    MODEL_NAME, torch_dtype=dtype).to(device)
+    MODEL_NAME, torch_dtype=dtype
+).to(device)
 model_finetuned = PeftModel.from_pretrained(base_model_for_lora, LORA_PATH)
 model_finetuned = model_finetuned.merge_and_unload()
 
@@ -37,7 +40,7 @@ pipe_base = pipeline(
     tokenizer=processor.tokenizer,
     feature_extractor=processor.feature_extractor,
     chunk_length_s=30,
-    device=0 if device == "cuda:0" else -1
+    device=0 if device == "cuda:0" else -1,
 )
 
 pipe_finetuned = pipeline(
@@ -46,7 +49,7 @@ pipe_finetuned = pipeline(
     tokenizer=processor.tokenizer,
     feature_extractor=processor.feature_extractor,
     chunk_length_s=30,
-    device=0 if device == "cuda:0" else -1
+    device=0 if device == "cuda:0" else -1,
 )
 
 
@@ -58,6 +61,7 @@ def transcribe_song(audio, model_choice):
 
     # Convert to float32
     import numpy as np
+
     audio_array = audio_array.astype(np.float32)
 
     # If stereo (2 channels), convert to mono
@@ -70,19 +74,19 @@ def transcribe_song(audio, model_choice):
 
     print(f"Transcribing audio array using {model_choice}...")
     active_pipe = pipe_finetuned if "Fine-Tuned" in model_choice else pipe_base
-    
+
     # Run inference through the pipeline using the raw array
     result = active_pipe(
         {"sampling_rate": sample_rate, "raw": audio_array},
         return_timestamps=True,
         generate_kwargs={
-            "language": "english", 
+            "language": "english",
             "task": "transcribe",
             "condition_on_prev_tokens": False,
-            "repetition_penalty": 1.2
-        }
+            "repetition_penalty": 1.2,
+        },
     )
-    
+
     # Format as karaoke-style lyrics if timestamps are returned
     if "chunks" in result:
         formatted_lyrics = []
@@ -90,15 +94,16 @@ def transcribe_song(audio, model_choice):
             start = chunk["timestamp"][0]
             end = chunk["timestamp"][1]
             text = chunk["text"].strip()
-            
+
             def format_time(sec):
-                if sec is None: return "??:??"
+                if sec is None:
+                    return "??:??"
                 m, s = divmod(int(sec), 60)
                 return f"{m:02d}:{s:02d}"
-                
+
             formatted_lyrics.append(f"[{format_time(start)} - {format_time(end)}] {text}")
         return "\n".join(formatted_lyrics)
-        
+
     return result["text"].strip()
 
 
@@ -116,9 +121,9 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo")) as demo:
         model_choice = gr.Radio(
             choices=["Base Whisper (Pop Optimized)", "Fine-Tuned (A-cappella Optimized)"],
             value="Base Whisper (Pop Optimized)",
-            label="Select Model Version"
+            label="Select Model Version",
         )
-        
+
     with gr.Row():
         with gr.Column():
             audio_input = gr.Audio(label="Upload Song (MP3/WAV)")
@@ -127,8 +132,7 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo")) as demo:
         with gr.Column():
             lyrics_output = gr.Textbox(label="Transcribed Lyrics", lines=10)
 
-    submit_btn.click(fn=transcribe_song, inputs=[audio_input, model_choice],
-                     outputs=lyrics_output)
+    submit_btn.click(fn=transcribe_song, inputs=[audio_input, model_choice], outputs=lyrics_output)
 
 if __name__ == "__main__":
     print("\nStarting AutoLyrics Web UI...")
